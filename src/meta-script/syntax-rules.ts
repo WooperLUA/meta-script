@@ -1,9 +1,3 @@
-interface SyntaxRule
-{
-    pattern: RegExp;
-    replacement: string;
-}
-
 export const apply_defined_syntax = (source: string): string =>
 {
     const syntax_regex = /#define_syntax\s+`([^`]+)`\s*->\s*`([^`]+)`/g;
@@ -26,6 +20,10 @@ export const apply_defined_syntax = (source: string): string =>
 
         const param_regex = /\$(\w+)/g;
         let pattern_regex_str = escape_regex(rule.pattern);
+
+        pattern_regex_str = pattern_regex_str.replace(/\\\s+/g, "\\s+");
+        pattern_regex_str = pattern_regex_str.replace(/\s+/g, "\\s*");
+
         const param_names: string[] = [];
         let param_match;
 
@@ -46,7 +44,7 @@ export const apply_defined_syntax = (source: string): string =>
             let result = rule.replacement;
             for (let i = 0; i < param_names.length; i++)
             {
-                result = result.replace(`$${param_names[i]}`, args[i + 1]);
+                result = result.split(`$${param_names[i]}`).join(args[i + 1]);
             }
             return result;
         });
