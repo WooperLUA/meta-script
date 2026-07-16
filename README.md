@@ -19,8 +19,8 @@
 # 📖 Usage
 
 ## Defining a macro
-Args are hygienic so defining variables in a macro is safe.
-```css
+Macros are hygienic so defining variables in a macro is safe.
+```typescript
 #define_macro foo(args)
 {
     //body
@@ -30,8 +30,8 @@ foo(args)
 ```
 
 ## Defining a syntax rule
-Prefixing with $ allows for dynamic data in the syntax (args basically).
-```css
+Prefixing with **$** allows for dynamic data in the syntax (they basically act as 'arguments').
+```typescript
 #define_syntax `|> $operation` -> `.$operation`
 
 const a : number[] = [1,2,3] |> map(x => x * x)
@@ -39,7 +39,7 @@ const a : number[] = [1,2,3] |> map(x => x * x)
 ```
 
 ## Defining a precomputation
-```css
+```typescript
 #define_precomp x Math.sin(Math.PI / 4) * 1000
 ```
 
