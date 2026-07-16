@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 import {parse_macro_definitions, parse_code} from "./meta-script/parser";
 import {expand_macros} from "./meta-script/macros";
 import {apply_defined_syntax} from "./meta-script/syntax-rules";
+import {apply_precomputation} from "./meta-script/precomp";
 
 const parse_args = (argv: string[]) =>
 {
@@ -54,13 +55,18 @@ const main = (argv: string[]) =>
     const {file_path, jsx, file_extension} = parse_args(argv);
     const file_content = fs.readFileSync(file_path, "utf8");
 
-    const preprocessed_content = file_content.replace(/#define_macro\s+(\w+)/g, "__ms_macro__: function $1");
+    // Precomputation
+    const precomputed_content = apply_precomputation(file_content);
 
+    // Macro preprocess for babel
+    const preprocessed_content = precomputed_content.replace(/#define_macro\s+(\w+)/g, "__ms_macro__: function $1");
+
+    // Syntax definition
     const content = apply_defined_syntax(preprocessed_content);
 
+    // Macro definitions and extensions
     const ast = parse_code(content, jsx);
     const macros = ast ? parse_macro_definitions(ast) : [];
-
     const clean_content = expand_macros(content, macros, jsx);
 
     console.log("Processed Content:\n", clean_content);
