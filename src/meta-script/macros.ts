@@ -44,12 +44,17 @@ const apply_hygiene_renaming = (node: any, renaming_map: Map<string, string>, pa
 
     if (node.type === "Identifier" && renaming_map.has(node.name))
     {
-        const is_object_property = parent_node &&
+        const is_member_property = parent_node &&
             parent_node.type === "MemberExpression" &&
             parent_node.property === node &&
             !parent_node.computed;
 
-        if (!is_object_property)
+        const is_object_key = parent_node &&
+            parent_node.type === "ObjectProperty" &&
+            parent_node.key === node &&
+            !parent_node.computed;
+
+        if (!is_member_property && !is_object_key)
         {
             node.name = renaming_map.get(node.name)!;
         }
@@ -72,7 +77,7 @@ const apply_hygiene_renaming = (node: any, renaming_map: Map<string, string>, pa
             }
         }
     }
-};
+};  
 
 const substitute_arguments = (node: any, params: string[], args: any[]) =>
 {
@@ -88,24 +93,60 @@ const substitute_arguments = (node: any, params: string[], args: any[]) =>
                 const param_index = params.indexOf(child.name);
                 if (param_index !== -1 && args[param_index])
                 {
-                    node[key] = clone_node(args[param_index]);
+                    const is_member_property = node.type === "MemberExpression" &&
+                        node.property === child &&
+                        !node.computed;
+
+                    const is_object_key = node.type === "ObjectProperty" &&
+                        node.key === child &&
+                        !node.computed;
+
+                    if (!is_member_property && !is_object_key)
+                    {
+                        node[key] = clone_node(args[param_index]);
+                    }
                 }
             }
             else if (Array.isArray(child))
             {
                 for (let i = 0; i < child.length; i++)
                 {
-                    if (child[i] && child[i].type === "Identifier")
+                    const item = child[i];
+                    if (item && item.type === "SpreadElement" && item.argument && item.argument.type === "Identifier")
                     {
-                        const param_index = params.indexOf(child[i].name);
+                        const param_name = "..." + item.argument.name;
+                        const param_index = params.indexOf(param_name);
+                        if (param_index !== -1 && Array.isArray(args[param_index]))
+                        {
+                            const replacement_nodes = args[param_index].map(clone_node);
+                            child.splice(i, 1, ...replacement_nodes);
+                            i += replacement_nodes.length - 1;
+                            continue;
+                        }
+                    }
+
+                    if (item && item.type === "Identifier")
+                    {
+                        const param_index = params.indexOf(item.name);
                         if (param_index !== -1 && args[param_index])
                         {
-                            child[i] = clone_node(args[param_index]);
+                            const is_member_property = node.type === "MemberExpression" &&
+                                node.property === item &&
+                                !node.computed;
+
+                            const is_object_key = node.type === "ObjectProperty" &&
+                                node.key === item &&
+                                !node.computed;
+
+                            if (!is_member_property && !is_object_key)
+                            {
+                                child[i] = clone_node(args[param_index]);
+                            }
                         }
                     }
                     else
                     {
-                        substitute_arguments(child[i], params, args);
+                        substitute_arguments(item, params, args);
                     }
                 }
             }
@@ -133,7 +174,23 @@ const compile_macro_body = (body_node: any, params: string[], args: any[]): stri
 
     apply_hygiene_renaming(body_clone, renaming_map);
 
-    substitute_arguments(body_clone, params, args);
+    const mapped_args: any[] = [];
+    let current_arg_idx = 0;
+    for (let i = 0; i < params.length; i++)
+    {
+        if (params[i].startsWith("..."))
+        {
+            mapped_args[i] = args.slice(current_arg_idx);
+            current_arg_idx = args.length;
+        }
+        else
+        {
+            mapped_args[i] = args[current_arg_idx];
+            current_arg_idx++;
+        }
+    }
+
+    substitute_arguments(body_clone, params, mapped_args);
 
     let target_node = body_clone;
     if (

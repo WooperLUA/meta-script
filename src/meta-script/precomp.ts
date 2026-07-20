@@ -1,3 +1,5 @@
+import {safe_replace} from "./utils";
+
 export const apply_precomputation = (source: string): string =>
 {
     const precomp_regex = /#define_precomp\s+(\w+)\s+(.+)/g;
@@ -20,12 +22,12 @@ export const apply_precomputation = (source: string): string =>
         }
     }
 
-    let clean_source = source.replace(/#define_precomp\s+\w+\s+.+/g, "");
+    let clean_source = safe_replace(source, /#define_precomp\s+\w+\s+.+/g, "");
 
     for (const def of definitions)
     {
         const word_boundary_regex = new RegExp(`\\b${def.name}\\b`, "g");
-        clean_source = clean_source.replace(word_boundary_regex, def.value);
+        clean_source = safe_replace(clean_source, word_boundary_regex, def.value);
     }
 
     return clean_source;

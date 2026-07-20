@@ -45,11 +45,11 @@ const a : number[] = [1,2,3] |> map(x => x * x)
 
 # Running MetaScript
 ```shell
-<node | bun> index.ts <path_to_the_file>
+meta-script <file_path> [--jsx]
 ```
 It's possible to explicitly add the **--jsx** flag to specify JSX usage but MetaScript infers it anyway.
 ```shell
-<node | bun> index.ts <path_to_the_file> --jsx
+meta-script <file_path> [--jsx]
 ```
 
 # 📄 License

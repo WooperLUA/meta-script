@@ -57,7 +57,15 @@ export const parse_macro_definitions = (ast: any) =>
                         while (tokens[next_idx] && tokens[next_idx].type.label !== ")")
                         {
                             const param_token = tokens[next_idx];
-                            if (param_token.type.label === "name")
+                            if (param_token.type.label === "...")
+                            {
+                                next_idx++;
+                                if (tokens[next_idx] && tokens[next_idx].type.label === "name")
+                                {
+                                    params.push("..." + tokens[next_idx].value);
+                                }
+                            }
+                            else if (param_token.type.label === "name")
                             {
                                 params.push(param_token.value);
                             }

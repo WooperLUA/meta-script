@@ -1,3 +1,5 @@
+import {safe_replace} from "./utils";
+
 export const apply_defined_syntax = (source: string): string =>
 {
     const syntax_regex = /#define_syntax\s+`([^`]+)`\s*->\s*`([^`]+)`/g;
@@ -12,7 +14,7 @@ export const apply_defined_syntax = (source: string): string =>
         });
     }
 
-    let clean_source = source.replace(/#define_syntax\s+`[^`]+`\s*->\s*`[^`]+`/g, "");
+    let clean_source = safe_replace(source, /#define_syntax\s+`[^`]+`\s*->\s*`[^`]+`/g, "");
 
     for (const rule of rules)
     {
@@ -39,7 +41,7 @@ export const apply_defined_syntax = (source: string): string =>
 
         const matcher = new RegExp(pattern_regex_str, "g");
 
-        clean_source = clean_source.replace(matcher, (...args) =>
+        clean_source = safe_replace(clean_source, matcher, (...args) =>
         {
             let result = rule.replacement;
             for (let i = 0; i < param_names.length; i++)
